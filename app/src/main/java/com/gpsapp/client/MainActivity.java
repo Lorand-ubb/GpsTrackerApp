@@ -12,6 +12,9 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.gpsapp.client.api.RetrofitClient;
+import com.gpsapp.client.model.LoginRequest;
+
 public class MainActivity extends AppCompatActivity {
     private EditText etUsername;
     private EditText etPassword;
@@ -38,9 +41,32 @@ public class MainActivity extends AppCompatActivity {
                 String username = etUsername.getText().toString();
                 String password = etPassword.getText().toString();
 
-                Toast.makeText(MainActivity.this,
-                        "Felhasználónév: " + username + "\nJelszó: " + password,
-                        Toast.LENGTH_SHORT).show();
+                LoginRequest loginRequest = new LoginRequest(username, password);
+                RetrofitClient.getService().loginUser(loginRequest).enqueue(new retrofit2.Callback<okhttp3.ResponseBody>() {
+                    @Override
+                    public void onResponse(retrofit2.Call<okhttp3.ResponseBody> call, retrofit2.Response<okhttp3.ResponseBody> response) {
+                        if (response.isSuccessful()) {
+                            try {
+                                String token = response.body().string();
+                                android.widget
+                                        .Toast
+                                        .makeText(MainActivity.this,
+                                                "SIKERES BELÉPÉS! Token: " + token,
+                                                android.widget.Toast.LENGTH_LONG)
+                                        .show();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        } else {
+                            android.widget.Toast.makeText(MainActivity.this, "Hiba: Rossz név vagy jelszó!", android.widget.Toast.LENGTH_SHORT).show();
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(retrofit2.Call<okhttp3.ResponseBody> call, Throwable t) {
+                        android.widget.Toast.makeText(MainActivity.this, "Hálózati hiba: " + t.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                    }
+                });
             }
         });
     }
