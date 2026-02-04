@@ -1,5 +1,6 @@
 package com.gpsapp.client;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -48,17 +49,18 @@ public class MainActivity extends AppCompatActivity {
                         if (response.isSuccessful()) {
                             try {
                                 String token = response.body().string();
-                                android.widget
-                                        .Toast
-                                        .makeText(MainActivity.this,
-                                                "SIKERES BELÉPÉS! Token: " + token,
-                                                android.widget.Toast.LENGTH_LONG)
-                                        .show();
+
+                                Intent intent = new Intent(MainActivity.this, MapsActivity.class);
+                                intent.putExtra("USER_TOKEN", token);
+                                startActivity(intent);
+                                finish();
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
                         } else {
-                            android.widget.Toast.makeText(MainActivity.this, "Hiba: Rossz név vagy jelszó!", android.widget.Toast.LENGTH_SHORT).show();
+                            android.widget.Toast.makeText(MainActivity.this,
+                                            "Hiba: Rossz név vagy jelszó!",
+                                            android.widget.Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -70,6 +72,4 @@ public class MainActivity extends AppCompatActivity {
             }
         });
     }
-
-
 }
