@@ -11,9 +11,11 @@ import androidx.fragment.app.FragmentActivity;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.LatLng;
 import com.gpsapp.client.databinding.ActivityMapsBinding;
 
 import org.jetbrains.annotations.NotNull;
@@ -35,6 +37,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
         fusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this);
+
+
     }
 
 
@@ -60,7 +64,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
         }
 
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            mMap.setMyLocationEnabled(true);
 
+            getDeviceLocation();
+        } else {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 1);
+        }
     }
 
     public void onRequestPermissionsResult(int requestCode, @NotNull String[] permissions, @NotNull int[] grantResults) {
@@ -72,9 +82,34 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // Enable the location layer
                 mMap.setMyLocationEnabled(true);
+
+                getDeviceLocation();
             } else {
                 Toast.makeText(this, "GPS engedély nélkül nem látjuk, hol vagy!", Toast.LENGTH_LONG).show();
             }
+        }
+    }
+
+    private void getDeviceLocation() {
+        try {
+           if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+               fusedLocationProviderClient.getLastLocation().addOnSuccessListener(this, location -> {
+                   if (location != null) {
+                       double lat = location.getLatitude();
+                       double lng = location.getLongitude();
+                       android.widget.Toast.makeText(MapsActivity.this,
+                               "Koordináták: " + lat + ", " + lng,
+                               android.widget.Toast.LENGTH_LONG).show();
+                       mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(lat, lng), 15));
+                   } else {
+                       android.widget.Toast.makeText(MapsActivity.this,
+                               "A jelenlegi helyzet ismeretlen (kapcsold be a GPS-t!)",
+                               android.widget.Toast.LENGTH_SHORT).show();
+                   }
+               });
+           }
+        } catch (SecurityException e) {
+            e.printStackTrace();
         }
     }
 }
