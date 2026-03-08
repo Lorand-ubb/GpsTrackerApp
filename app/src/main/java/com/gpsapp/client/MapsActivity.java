@@ -42,6 +42,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private FusedLocationProviderClient fusedLocationProviderClient;
     private String token;
     private Marker tempMarker;
+    private Marker markerToDelete;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,7 +52,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(binding.getRoot());
 
         binding.floatingActionButton.setOnClickListener(v -> {
-            setButtonsVisibility(false);
+            setTempMarkerButtonsVisibility(false);
             setTempMarkerVisibility(false);
         });
 
@@ -67,13 +68,45 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     if (tempMarker != null) {
                         LatLng position = tempMarker.getPosition();
                         saveDeviceLocation(position.latitude, position.longitude, label);
-                        setButtonsVisibility(false);
+                        setTempMarkerButtonsVisibility(false);
                         setTempMarkerVisibility(false);
                     }
                 }
             });
             builder.setNegativeButton("No", (dialog, which) -> dialog.cancel());
             builder.show();
+        });
+
+        binding.floatingActionButton3.setOnClickListener(v -> {
+            if (markerToDelete != null) {
+                AlertDialog.Builder builder = new AlertDialog.Builder(MapsActivity.this);
+                builder.setTitle("Biztosan törli a(z)" + markerToDelete.getTitle() + "helyet?");
+                builder.setPositiveButton("Igen", (dialog, which) -> {
+                    RetrofitClient
+                            .getService()
+                            .deleteLocation(markerToDelete.getPosition().latitude, markerToDelete.getPosition().longitude, "Bearer " + token)
+                            .enqueue(new Callback<ResponseBody>() {
+                                @Override
+                                public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+                                    if (response.isSuccessful()) {
+                                        markerToDelete.remove();
+                                        Toast.makeText(MapsActivity.this, "Sikeresen törölve!", Toast.LENGTH_SHORT).show();
+                                        binding.floatingActionButton3.setVisibility(View.GONE);
+                                        markerToDelete = null;
+                                    } else {
+                                        Toast.makeText(MapsActivity.this, response.code(), Toast.LENGTH_LONG).show();
+                                    }
+                                }
+
+                                @Override
+                                public void onFailure(Call<ResponseBody> call, Throwable t) {
+                                    Toast.makeText(MapsActivity.this, "Hiba a törlés során: \n" + t.getMessage(), Toast.LENGTH_LONG).show();
+                                }
+                            });
+                });
+                builder.setNegativeButton("Nem", (dialog, which) -> dialog.cancel());
+                builder.show();
+            }
         });
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -111,12 +144,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         }
 
         mMap.setOnMapClickListener(latLng -> {
+            binding.floatingActionButton3.setVisibility(View.GONE);
+            if (markerToDelete != null) {
+                markerToDelete = null;
+            }
             if (tempMarker != null) {
                 tempMarker.remove();
             }
             MarkerOptions markerOptions = new MarkerOptions().position(latLng);
             tempMarker = mMap.addMarker(markerOptions);
-            setButtonsVisibility(true);
+            setTempMarkerButtonsVisibility(true);
+        });
+
+        mMap.setOnMarkerClickListener(marker -> {
+            if (!marker.equals(tempMarker)) {
+                binding.floatingActionButton3.setVisibility(View.VISIBLE);
+                markerToDelete = marker;
+                setTempMarkerVisibility(false);
+                setTempMarkerButtonsVisibility(false);
+            }
+            return false;
         });
     }
 
@@ -130,7 +177,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         }
     }
-    private void setButtonsVisibility(boolean visibility) {
+    private void setTempMarkerButtonsVisibility(boolean visibility) {
         binding.floatingActionButton.setVisibility(visibility ? View.VISIBLE : View.GONE);
         binding.floatingActionButton2.setVisibility(visibility ? View.VISIBLE : View.GONE);
     }
@@ -183,7 +230,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             public void onResponse(Call<okhttp3.ResponseBody> call, Response<okhttp3.ResponseBody> response) {
                 if (response.isSuccessful()) {
                     Toast.makeText(MapsActivity.this, "A hely sikeresen el lett mentve!", Toast.LENGTH_SHORT).show();
-                    loadSavedLocations();
+                    mMap.addMarker(new MarkerOptions().position(new LatLng(lat, lng)).title(label));
                 } else {
                     Toast.makeText(MapsActivity.this,
                             "Nem sikerült menteni a helyszínt!",

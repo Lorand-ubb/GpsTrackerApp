@@ -9,7 +9,9 @@ public class RetrofitClient {
 
     public static GpsApiService getService() {
         if (retrofit == null) {
-            retrofit = new Retrofit.Builder().baseUrl("http://192.168.0.194:8080/").addConverterFactory(GsonConverterFactory.create()).build();
+            retrofit = new Retrofit.Builder().baseUrl("http://192.168.0.194:8080/")
+                    .addConverterFactory(GsonConverterFactory.create())
+                    .build();
         }
         return retrofit.create(GpsApiService.class);
     }
