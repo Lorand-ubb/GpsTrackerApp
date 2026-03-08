@@ -58,15 +58,15 @@ public class MainActivity extends AppCompatActivity {
                                 e.printStackTrace();
                             }
                         } else {
-                            android.widget.Toast.makeText(MainActivity.this,
+                            Toast.makeText(MainActivity.this,
                                             "Hiba: Rossz név vagy jelszó!",
-                                            android.widget.Toast.LENGTH_SHORT).show();
+                                            Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(retrofit2.Call<okhttp3.ResponseBody> call, Throwable t) {
-                        android.widget.Toast.makeText(MainActivity.this, "Hálózati hiba: " + t.getMessage(), android.widget.Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Hálózati hiba: " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
             }
