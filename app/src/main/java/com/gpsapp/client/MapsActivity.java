@@ -109,6 +109,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }
         });
 
+        binding.fabProfile.setOnClickListener(v -> {
+            Intent intent = new Intent(MapsActivity.this, ProfileActivity.class);
+            intent.putExtra("USER_TOKEN", token);
+            startActivity(intent);
+        });
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -135,8 +141,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             // Enable the blue dot
             mMap.setMyLocationEnabled(true);
 
-            // Get the current location
-            getDeviceLocation();
+            Intent intent = getIntent();
+
+            // Check if the intent has the latitude and longitude
+            if (intent.hasExtra("latitude")) {
+                double latitude = intent.getDoubleExtra("latitude", 0.0);
+                double longitude = intent.getDoubleExtra("longitude", 0.0);
+
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15));
+            } else {
+                // Get the current location
+                getDeviceLocation();
+            }
             loadSavedLocations();
         } else {
             // Request the permission
@@ -157,6 +173,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         });
 
         mMap.setOnMarkerClickListener(marker -> {
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(marker.getPosition(), 15));
             if (!marker.equals(tempMarker)) {
                 binding.floatingActionButton3.setVisibility(View.VISIBLE);
                 markerToDelete = marker;
